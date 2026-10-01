@@ -1,0 +1,6 @@
+kubectl apply -f https://download.elastic.co/downloads/eck/2.13.0/crds.yaml
+kubectl apply -f https://download.elastic.co/downloads/eck/2.13.0/operator.yaml -n eck-operator
+##forgot to run in expected namespace -- reran as 
+kubectl create namespace elastic-system
+kubectl apply -f https://download.elastic.co/downloads/eck/2.13.0/operator.yaml
+kubectl -n elastic-system get pods
