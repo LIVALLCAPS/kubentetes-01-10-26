@@ -4,7 +4,7 @@ kind: Elasticsearch
 metadata:
   name: livs-pods
 spec:
-  version: 9.5.4
+  version: 8.15.0
   nodeSets:
   - name: default
     count: 3
