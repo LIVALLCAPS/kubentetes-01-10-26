@@ -1,0 +1,31 @@
+kubectl apply -f manifests/networkpolicy.yaml
+kubectl -n logging run test --rm -it --image=busybox -- wget -qO- https://es-logs-es-http:9200
+
+
+
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: es-logs-allow-kibana-operator
+  namespace: logging
+spec:
+  podSelector:
+    matchLabels:
+      elasticsearch.k8s.elastic.co/cluster-name: es-logs
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: logging
+          podSelector:
+            matchLabels:
+              kibana.k8s.elastic.co/name: kibana-logs
+        - namespaceSelector:
+            matchLabels:
+              name: eck-operator
+      ports:
+        - port: 9200
+          protocol: TCP
