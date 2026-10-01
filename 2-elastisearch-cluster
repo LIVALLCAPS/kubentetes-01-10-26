@@ -1,0 +1,55 @@
+Create file 
+mkdir manifests 
+vim manifests/elasticsearch.yaml
+kubectl apply -f manifests/elasticsearch.yaml
+
+##check health
+PW=$(kubectl -n logging get secret es-logs-es-elastic-user -o jsonpath='{.data.elastic}' | base64 -d)
+ES=$(kubectl -n logging get svc es-logs-es-http -o jsonpath='{.spec.clusterIP}')
+
+curl -u elastic:$PW -k https://$ES:9200/_cluster/health?pretty
+
+
+##file itself: 
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: es-logs
+  namespace: logging
+spec:
+  version: 8.15.0
+  nodeSets:
+    - name: default
+      count: 3
+      config:
+        node.store.allow_mmap: false
+      podTemplate:
+        spec:
+          affinity:
+            podAntiAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      elasticsearch.k8s.elastic.co/cluster-name: es-logs
+                  topologyKey: kubernetes.io/hostname
+          containers:
+            - name: elasticsearch
+              resources:
+                requests:
+                  cpu: 500m
+                  memory: 1Gi
+                limits:
+                  cpu: 1
+                  memory: 2Gi
+              env:
+                - name: ES_JAVA_OPTS
+                  value: "-Xms1g -Xmx1g"
+      volumeClaimTemplates:
+        - metadata:
+            name: elasticsearch-data
+          spec:
+            accessModes: ["ReadWriteOnce"]
+            storageClassName: standard
+            resources:
+              requests:
+                storage: 50Gi
