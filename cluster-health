@@ -1,0 +1,4 @@
+PW=$(kubectl -n logging get secret es-logs-es-elastic-user -o jsonpath='{.data.elastic}' | base64 -d)
+ES=$(kubectl -n logging get svc es-logs-es-http -o jsonpath='{.spec.clusterIP}')
+
+curl -u elastic:$PW -k https://$ES:9200/_cluster/health?pretty
