@@ -1,0 +1,62 @@
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: es-logs
+  namespace: logging
+spec:
+  version: 8.15.0
+  nodeSets:
+    - name: default
+      count: 3
+      config:
+        node.store.allow_mmap: false
+        node.roles: ["master","data","ingest"]
+        xpack.security.enabled: true
+        # JVM heap: half of 2Gi limit
+        node:
+          attr:
+            rack: "rack1"
+        # ECK style JVM options
+        # (or use podTemplate env below)
+      podTemplate:
+        metadata:
+          labels:
+            app: es-logs
+        spec:
+          affinity:
+            podAntiAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchExpressions:
+                      - key: app
+                        operator: In
+                        values: ["es-logs"]
+                  topologyKey: "kubernetes.io/hostname"
+          topologySpreadConstraints:
+            - maxSkew: 1
+              topologyKey: "kubernetes.io/hostname"
+              whenUnsatisfiable: DoNotSchedule
+              labelSelector:
+                matchLabels:
+                  app: es-logs
+          containers:
+            - name: elasticsearch
+              resources:
+                requests:
+                  cpu: "500m"
+                  memory: "1Gi"
+                limits:
+                  cpu: "1"
+                  memory: "2Gi"
+              env:
+                - name: ES_JAVA_OPTS
+                  value: "-Xms1g -Xmx1g"
+      volumeClaimTemplates:
+        - metadata:
+            name: elasticsearch-data
+          spec:
+            accessModes: ["ReadWriteOnce"]
+            storageClassName: default
+            resources:
+              requests:
+                storage: 50Gi
