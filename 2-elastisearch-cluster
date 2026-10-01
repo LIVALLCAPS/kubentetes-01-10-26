@@ -3,11 +3,9 @@ mkdir manifests
 vim manifests/elasticsearch.yaml
 kubectl apply -f manifests/elasticsearch.yaml
 
-##check health
-PW=$(kubectl -n logging get secret es-logs-es-elastic-user -o jsonpath='{.data.elastic}' | base64 -d)
-ES=$(kubectl -n logging get svc es-logs-es-http -o jsonpath='{.spec.clusterIP}')
+##check placement
+kubectl -n logging get pods -l elasticsearch.k8s.elastic.co/cluster-name=es-logs -o wide
 
-curl -u elastic:$PW -k https://$ES:9200/_cluster/health?pretty
 
 
 ##file itself: 
